@@ -239,7 +239,7 @@ if ($ClearAuth) {
 Write-Host ""
 Write-Host "[ E N T R A   I D   G R O U P   M A N A G E R ]  " -ForegroundColor DarkCyan -NoNewline
 Write-Host "v1.3" -ForegroundColor White
-Write-Host "                  Manage Group Membership" -ForegroundColor DarkGray
+Write-Host "Manage Group Membership" -ForegroundColor DarkGray
 Write-Host ""
 
 # Required modules
@@ -346,21 +346,96 @@ function Save-GroupManagerConfig {
     $config | ConvertTo-Json -Depth 10 | Set-Content $ConfigPath -Force
 }
 
+function Show-GroupSetupMenu {
+    while ($true) {
+        # Refresh existing groups each loop so the menu reflects current state
+        $existingGroups = Get-GroupManagerConfig
+
+        Show-Header -Subtitle "Manage Configured Groups"
+        Write-Host ""
+        if ($existingGroups) {
+            Write-Host "  Current configured groups:" -ForegroundColor Yellow
+            foreach ($g in $existingGroups) { Write-Host "    $($g.Name) ($($g.Id))" -ForegroundColor Gray }
+        }
+
+        Write-Host ""
+        Write-Host "  CONFIGURE GROUPS" -ForegroundColor DarkCyan
+        Write-Host ""
+        Write-Host "    [1] " -ForegroundColor DarkGray -NoNewline
+        Write-Host "Add a new group" -ForegroundColor White
+        Write-Host "    [2] " -ForegroundColor DarkGray -NoNewline
+        Write-Host "Remove a group" -ForegroundColor White
+        Write-Host "    [3] " -ForegroundColor DarkGray -NoNewline
+        Write-Host "Replace all groups" -ForegroundColor White
+        Write-Host "    [4] " -ForegroundColor DarkGray -NoNewline
+        Write-Host "Done" -ForegroundColor White
+        Write-Host ""
+
+        $choice = (Read-Host "  Select option (1-4)").Trim()
+        if ($choice -notmatch '^[1-4]$') { Write-Host "Invalid selection. Please choose 1-4." -ForegroundColor Yellow; Start-Sleep -Milliseconds 600; continue }
+        if ($choice -eq '4') { Write-Host "Done. Returning to previous menu..." -ForegroundColor Cyan; Start-Sleep -Milliseconds 300; return }
+
+        switch ($choice) {
+            '1' {
+                $groupId = (Read-Host "Enter the Group Object ID (GUID)").Trim()
+                if ([string]::IsNullOrWhiteSpace($groupId)) { Write-Host "Group ID empty; returning." -ForegroundColor Yellow; Start-Sleep -Milliseconds 400; continue }
+                try { $null = [System.Guid]::Parse($groupId) } catch { Write-Host "Invalid GUID format; returning." -ForegroundColor Red; Start-Sleep -Milliseconds 400; continue }
+                $groupName = (Read-Host "Enter a friendly name for the group").Trim()
+                if ([string]::IsNullOrWhiteSpace($groupName)) { Write-Host "Group name empty; returning." -ForegroundColor Yellow; Start-Sleep -Milliseconds 400; continue }
+                $newGroup = @{ Name = $groupName; Id = $groupId }
+                if ($existingGroups) { $allGroups = @($existingGroups) + $newGroup } else { $allGroups = @($newGroup) }
+                Save-GroupManagerConfig -Groups $allGroups
+                Write-Host "Group '$groupName' added." -ForegroundColor Green
+                Start-Sleep -Milliseconds 600
+                continue
+            }
+            '2' {
+                if (-not $existingGroups -or $existingGroups.Count -eq 0) { Write-Host "No groups configured." -ForegroundColor Yellow; Start-Sleep -Milliseconds 400; continue }
+                Write-Host "Select group to remove:" -ForegroundColor Yellow
+                for ($i = 0; $i -lt $existingGroups.Count; $i++) { Write-Host "  $($i+1)) $($existingGroups[$i].Name)" }
+                $removeChoice = (Read-Host "Enter number").Trim()
+                if ($removeChoice -notmatch '^[0-9]+$' -or [int]$removeChoice -lt 1 -or [int]$removeChoice -gt $existingGroups.Count) { Write-Host "Invalid selection." -ForegroundColor Yellow; Start-Sleep -Milliseconds 400; continue }
+                $removedGroup = $existingGroups[[int]$removeChoice - 1]
+                $remainingGroups = @($existingGroups | Where-Object { $_.Id -ne $removedGroup.Id })
+                Save-GroupManagerConfig -Groups $remainingGroups
+                Write-Host "Removed: $($removedGroup.Name)" -ForegroundColor Green
+                Start-Sleep -Milliseconds 600
+                continue
+            }
+            '3' {
+                Write-Host "Enter groups one at a time. Blank ID finishes." -ForegroundColor Yellow
+                $newGroups = @(); $groupNum = 1
+                while ($true) {
+                    $groupId = (Read-Host "Group $groupNum - Object ID (or Enter to finish)").Trim()
+                    if ([string]::IsNullOrWhiteSpace($groupId)) { break }
+                    try { $null = [System.Guid]::Parse($groupId) } catch { Write-Host "Invalid GUID - skipping." -ForegroundColor Red; continue }
+                    $groupName = (Read-Host "Friendly name").Trim()
+                    if ([string]::IsNullOrWhiteSpace($groupName)) { Write-Host "Name empty - skipping." -ForegroundColor Yellow; continue }
+                    $newGroups += @{ Name = $groupName; Id = $groupId }
+                    $groupNum++
+                }
+                if ($newGroups.Count -gt 0) { Save-GroupManagerConfig -Groups $newGroups; Write-Host "Saved $($newGroups.Count) group(s)." -ForegroundColor Green } else { Write-Host "No groups saved." -ForegroundColor Yellow }
+                Start-Sleep -Milliseconds 600
+                continue
+            }
+        }
+    }
+}
+
 if ($Setup) {
     # If ObjectIds provided directly, add them without interactive menu
     if ($ObjectId -and $ObjectId.Count -gt 0) {
         Write-Host ""
         Write-Host "Adding groups by Object ID..." -ForegroundColor Cyan
         Write-Host ""
-        
+
         $newGroups = @()
         $existingGroups = Get-GroupManagerConfig
         if ($existingGroups) {
             $newGroups = @($existingGroups)
         }
-        
+
         foreach ($id in $ObjectId) {
-            # Validate GUID format
             try {
                 $null = [System.Guid]::Parse($id)
             }
@@ -368,173 +443,28 @@ if ($Setup) {
                 Write-Host "  Invalid GUID format: $id - Skipping" -ForegroundColor Red
                 continue
             }
-            
-            # Check if already exists
+
             if ($newGroups | Where-Object { $_.Id -eq $id }) {
                 Write-Host "  Group $id already configured - Skipping" -ForegroundColor Yellow
                 continue
             }
-            
-            # Prompt for friendly name
+
             $groupName = Read-Host "  Enter friendly name for $id"
-            if ([string]::IsNullOrWhiteSpace($groupName)) {
-                $groupName = "Group-$id"
-            }
-            
+            if ([string]::IsNullOrWhiteSpace($groupName)) { $groupName = "Group-$id" }
+
             $newGroups += @{ Name = $groupName; Id = $id }
             Write-Host "  Added: $groupName" -ForegroundColor Green
         }
-        
+
         Save-GroupManagerConfig -Groups $newGroups
         Write-Host ""
         Write-Host "Configuration saved. Total groups: $($newGroups.Count)" -ForegroundColor Green
         Write-Host ""
         return
     }
-    
+
     # Interactive configuration menu
-    Write-Host ""
-    Write-Host "GroupManager Configuration" -ForegroundColor Cyan
-    Write-Host "==========================" -ForegroundColor Cyan
-    Write-Host ""
-    Write-Host "Configure the Entra ID groups you want to manage."
-    Write-Host "Groups will be saved to: $ConfigPath"
-    Write-Host ""
-    
-    # Load existing groups
-    $existingGroups = Get-GroupManagerConfig
-    if ($existingGroups) {
-        Write-Host "Current configured groups:" -ForegroundColor Yellow
-        foreach ($g in $existingGroups) {
-            Write-Host "  - $($g.Name) ($($g.Id))" -ForegroundColor Gray
-        }
-        Write-Host ""
-    }
-    
-    Write-Host "Options:" -ForegroundColor Yellow
-    Write-Host "  [1] Add a new group"
-    Write-Host "  [2] Remove a group"
-    Write-Host "  [3] Replace all groups"
-    Write-Host "  [4] Cancel"
-    Write-Host ""
-    
-    $choice = Read-Host "Select option (1-4)"
-    
-    switch ($choice) {
-        "1" {
-            # Add new group
-            Write-Host ""
-            $groupId = Read-Host "Enter the Group Object ID (GUID)"
-            if ([string]::IsNullOrWhiteSpace($groupId)) {
-                Write-Host "Group ID cannot be empty. Configuration cancelled." -ForegroundColor Yellow
-                return
-            }
-            
-            # Validate GUID format
-            try {
-                $null = [System.Guid]::Parse($groupId)
-            }
-            catch {
-                Write-Host "Invalid GUID format. Configuration cancelled." -ForegroundColor Red
-                return
-            }
-            
-            $groupName = Read-Host "Enter a friendly name for the group"
-            if ([string]::IsNullOrWhiteSpace($groupName)) {
-                Write-Host "Group name cannot be empty. Configuration cancelled." -ForegroundColor Yellow
-                return
-            }
-            
-            $newGroup = @{ Name = $groupName; Id = $groupId }
-            
-            if ($existingGroups) {
-                $allGroups = @($existingGroups) + $newGroup
-            }
-            else {
-                $allGroups = @($newGroup)
-            }
-            
-            Save-GroupManagerConfig -Groups $allGroups
-            Write-Host ""
-            Write-Host "Group '$groupName' added successfully!" -ForegroundColor Green
-        }
-        "2" {
-            # Remove a group
-            if (-not $existingGroups -or $existingGroups.Count -eq 0) {
-                Write-Host "No groups configured to remove." -ForegroundColor Yellow
-                return
-            }
-            
-            Write-Host ""
-            Write-Host "Select group to remove:" -ForegroundColor Yellow
-            for ($i = 0; $i -lt $existingGroups.Count; $i++) {
-                Write-Host "  [$($i + 1)] $($existingGroups[$i].Name)"
-            }
-            Write-Host ""
-            
-            $removeChoice = Read-Host "Enter number (1-$($existingGroups.Count))"
-            if ($removeChoice -match '^\d+$' -and [int]$removeChoice -ge 1 -and [int]$removeChoice -le $existingGroups.Count) {
-                $removedGroup = $existingGroups[[int]$removeChoice - 1]
-                $remainingGroups = @($existingGroups | Where-Object { $_.Id -ne $removedGroup.Id })
-                Save-GroupManagerConfig -Groups $remainingGroups
-                Write-Host ""
-                Write-Host "Group '$($removedGroup.Name)' removed." -ForegroundColor Green
-            }
-            else {
-                Write-Host "Invalid selection." -ForegroundColor Yellow
-            }
-        }
-        "3" {
-            # Replace all groups
-            Write-Host ""
-            Write-Host "Enter groups one at a time. Enter blank Group ID when done." -ForegroundColor Yellow
-            Write-Host ""
-            
-            $newGroups = @()
-            $groupNum = 1
-            
-            while ($true) {
-                Write-Host "Group $groupNum" -ForegroundColor Cyan
-                $groupId = Read-Host "  Group Object ID (or Enter to finish)"
-                
-                if ([string]::IsNullOrWhiteSpace($groupId)) {
-                    break
-                }
-                
-                # Validate GUID format
-                try {
-                    $null = [System.Guid]::Parse($groupId)
-                }
-                catch {
-                    Write-Host "  Invalid GUID format. Skipping." -ForegroundColor Red
-                    continue
-                }
-                
-                $groupName = Read-Host "  Friendly name"
-                if ([string]::IsNullOrWhiteSpace($groupName)) {
-                    Write-Host "  Name cannot be empty. Skipping." -ForegroundColor Yellow
-                    continue
-                }
-                
-                $newGroups += @{ Name = $groupName; Id = $groupId }
-                $groupNum++
-                Write-Host ""
-            }
-            
-            if ($newGroups.Count -gt 0) {
-                Save-GroupManagerConfig -Groups $newGroups
-                Write-Host ""
-                Write-Host "Saved $($newGroups.Count) group(s) to configuration!" -ForegroundColor Green
-            }
-            else {
-                Write-Host "No groups entered. Configuration unchanged." -ForegroundColor Yellow
-            }
-        }
-        default {
-            Write-Host "Configuration cancelled." -ForegroundColor Yellow
-        }
-    }
-    return
+    Show-GroupSetupMenu
 }
 
 if ($ClearConfig) {
@@ -602,23 +532,22 @@ function Show-Menu {
 }
 
 function Show-Header {
+    param([string]$Subtitle)
     Clear-Host
     Write-Host ""
     Write-Host "[ E N T R A   I D   G R O U P   M A N A G E R ]  " -ForegroundColor DarkCyan -NoNewline
     Write-Host "v1.3" -ForegroundColor White
-    Write-Host "                  Manage Group Membership" -ForegroundColor DarkGray
     Write-Host ""
-    Write-Host "  Target Group: " -ForegroundColor DarkGray -NoNewline
-    Write-Host "$script:GroupName" -ForegroundColor Cyan
+    if ($Subtitle) {
+        Write-Host "$Subtitle" -ForegroundColor DarkGray
+    } elseif ($script:GroupName) {
+        Write-Host "Manage Group Membership - Target: $script:GroupName" -ForegroundColor DarkGray
+    }
     Write-Host ""
 }
 
 function Select-TargetGroup {
-    Clear-Host
-    Write-Host ""
-    Write-Host "[ E N T R A   I D   G R O U P   M A N A G E R ]  " -ForegroundColor DarkCyan -NoNewline
-    Write-Host "v1.3" -ForegroundColor White
-    Write-Host "                  Manage Group Membership" -ForegroundColor DarkGray
+    Show-Header -Subtitle "Manage Group Membership"
     Write-Host ""
     Write-Host "  SELECT TARGET GROUP" -ForegroundColor DarkCyan
     Write-Host ""
@@ -818,7 +747,14 @@ function Get-GroupMemberList {
 #region Main Loop
 
 # Select target group before main menu
-Select-TargetGroup
+if ($AvailableGroups.Count -gt 1) {
+    Select-TargetGroup
+}
+elseif ($AvailableGroups.Count -eq 1) {
+    # If only one group is configured, use it but show the main menu (user can Manage groups from menu)
+    $script:GroupId = $AvailableGroups[0].Id
+    $script:GroupName = $AvailableGroups[0].Name
+}
 
 $ContinueRunning = $true
 
@@ -830,6 +766,7 @@ while ($ContinueRunning) {
         "Remove group member",
         "List group members",
         "Switch group",
+        "Manage configured groups",
         "Exit"
     )
     
@@ -841,9 +778,26 @@ while ($ContinueRunning) {
         3 { Get-GroupMemberList }
         4 { Select-TargetGroup }
         5 { 
+            # Open the group setup/manage menu
+            Show-GroupSetupMenu
+            # Refresh available groups after management and adjust selection
+            $AvailableGroups = Get-GroupManagerConfig
+            if (-not $AvailableGroups -or $AvailableGroups.Count -eq 0) {
+                Write-Host "No groups configured. Exiting." -ForegroundColor Yellow
+                $ContinueRunning = $false
+            }
+            elseif ($AvailableGroups.Count -eq 1) {
+                $script:GroupId = $AvailableGroups[0].Id
+                $script:GroupName = $AvailableGroups[0].Name
+            }
+            else {
+                Select-TargetGroup
+            }
+        }
+        6 { 
             Write-Host ""
             Write-Host "  Disconnecting from Microsoft Graph..." -ForegroundColor Cyan
-            Disconnect-MgGraph | Out-Null
+            Disconnect-MgGraph -ErrorAction SilentlyContinue | Out-Null
             Write-Host "  Disconnected." -ForegroundColor Green
             Write-Host ""
             $ContinueRunning = $false

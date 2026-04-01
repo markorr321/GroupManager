@@ -72,6 +72,33 @@ This prompts for:
 
 Configuration is saved as user-level environment variables.
 
+#### Creating the App Registration
+
+1. Go to the [Azure Portal](https://portal.azure.com) > **Microsoft Entra ID** > **App registrations**
+2. Click **New registration**
+3. Enter a name (e.g. `GroupManager`)
+4. Set **Supported account types** to *Accounts in this organizational directory only (Single tenant)*
+5. Leave **Redirect URI** blank for now and click **Register**
+6. Copy the **Application (client) ID** and **Directory (tenant) ID** from the Overview page
+7. Go to **Authentication** > **Add a platform** > **Mobile and desktop applications**
+8. Add the following Redirect URI:
+   ```
+   ms-appx-web://Microsoft.AAD.BrokerPlugin/afc072ee-5353-4b0c-a487-de0ae2c0b500
+   ```
+9. Under **Advanced settings** on the Authentication page, set **Allow public client flows** to **Yes** and click **Save**
+10. Go to **API permissions** > **Add a permission** > **Microsoft Graph** > **Delegated permissions**
+9. Add the following permissions:
+   - `User.Read`
+   - `User.Read.All`
+   - `GroupMember.ReadWrite.All`
+10. Click **Grant admin consent** (requires admin privileges)
+
+Then run the configure command and enter the Client ID and Tenant ID when prompted:
+
+```powershell
+.\GroupManager.ps1 -Configure
+```
+
 #### Required API Permissions (Delegated)
 
 | Permission | Description |
@@ -113,9 +140,8 @@ Configuration is saved as user-level environment variables.
 
 ```
 [ E N T R A   I D   G R O U P   M A N A G E R ]  v1.3
-                  Manage Group Membership
 
-  Target Group: My-Security-Group
+Manage Group Membership - Target: My-Security-Group
 
   SELECT AN OPTION
 
@@ -123,9 +149,10 @@ Configuration is saved as user-level environment variables.
     [2] Remove group member
     [3] List group members
     [4] Switch group
-    [5] Exit
+    [5] Manage configured groups
+    [6] Exit
 
-  Select option (1-5):
+  Select option (1-6):
 ```
 
 ## License
