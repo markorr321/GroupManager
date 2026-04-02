@@ -22,23 +22,24 @@ A PowerShell tool for managing Entra ID security group membership. Available as 
 ### PowerShell Gallery (Recommended)
 
 ```powershell
-# Install the module
 Install-Module GroupManager -Scope CurrentUser
+```
 
-# Configure your groups
+```powershell
 Set-GroupManagerGroup
+```
 
-# Launch the interactive TUI
+```powershell
 Start-GroupManager
 ```
 
 ### Standalone Script
 
 ```powershell
-# First run: Configure the groups you want to manage
 .\GroupManager.ps1 -Setup
+```
 
-# Run the tool
+```powershell
 .\GroupManager.ps1
 ```
 
@@ -46,11 +47,13 @@ Start-GroupManager
 
 ### Option 1: PowerShell Gallery
 
+Current user:
 ```powershell
-# Current user
 Install-Module GroupManager -Scope CurrentUser
+```
 
-# All users (requires admin)
+All users (requires admin):
+```powershell
 Install-Module GroupManager -Scope AllUsers
 ```
 
@@ -82,19 +85,22 @@ Then run `GroupManager` from any PowerShell window.
 ### Scripting Examples
 
 ```powershell
-# Connect to Graph
 Connect-GroupManager
+```
 
-# List members of a group
+```powershell
 Get-GroupManagerMember -GroupId "88626840-b24d-417e-aca5-18f224b081d7"
+```
 
-# Add a user
+```powershell
 Add-GroupManagerMember -GroupId "88626840-..." -UserPrincipalName "user@contoso.com"
+```
 
-# Remove a user
+```powershell
 Remove-GroupManagerMember -GroupId "88626840-..." -UserPrincipalName "user@contoso.com"
+```
 
-# Pipe member list to a table
+```powershell
 Get-GroupManagerMember -GroupId "88626840-..." | Format-Table
 ```
 
@@ -104,19 +110,23 @@ Get-GroupManagerMember -GroupId "88626840-..." | Format-Table
 
 **Module:**
 ```powershell
-# Interactive menu
 Set-GroupManagerGroup
+```
 
-# Add by Object ID
+```powershell
 Set-GroupManagerGroup -ObjectId "07a94b39-cfee-41bd-a76f-187b3161696a"
+```
 
-# Add multiple groups
+```powershell
 Set-GroupManagerGroup -ObjectId "guid1", "guid2", "guid3"
 ```
 
 **Standalone script:**
 ```powershell
 .\GroupManager.ps1 -Setup
+```
+
+```powershell
 .\GroupManager.ps1 -Setup -ObjectId "07a94b39-cfee-41bd-a76f-187b3161696a"
 ```
 
@@ -173,13 +183,19 @@ Configuration is saved as user-level environment variables.
 
 **Module:**
 ```powershell
-Clear-GroupManagerConfig   # Clear group configuration
-Clear-GroupManagerAuth     # Clear app registration configuration
+Clear-GroupManagerConfig
+```
+
+```powershell
+Clear-GroupManagerAuth
 ```
 
 **Standalone script:**
 ```powershell
 .\GroupManager.ps1 -ClearConfig
+```
+
+```powershell
 .\GroupManager.ps1 -ClearAuth
 ```
 
