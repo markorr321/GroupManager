@@ -1,22 +1,38 @@
 # GroupManager
 
-A PowerShell terminal UI for managing Entra ID security group membership.
+A PowerShell tool for managing Entra ID security group membership. Available as a standalone script or a PowerShell Gallery module.
 
-![PowerShell](https://img.shields.io/badge/PowerShell-7.0+-blue.svg)
+![PowerShell](https://img.shields.io/badge/PowerShell-5.1+-blue.svg)
 ![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey.svg)
+![Gallery](https://img.shields.io/powershellgallery/v/GroupManager.svg)
 
 ## Features
 
 - Add users to groups by UPN (email)
 - Remove users from groups by UPN
 - List all current group members with quick removal
-- Interactive menu-driven interface
+- Interactive menu-driven TUI
 - Configure multiple groups by Object ID
 - Support for custom app registration authentication
+- Non-interactive cmdlets for scripting and automation
 - Auto-install Microsoft Graph modules if missing
-- Self-install to PowerShell profile for easy access
 
 ## Quick Start
+
+### PowerShell Gallery (Recommended)
+
+```powershell
+# Install the module
+Install-Module GroupManager -Scope CurrentUser
+
+# Configure your groups
+Set-GroupManagerGroup
+
+# Launch the interactive TUI
+Start-GroupManager
+```
+
+### Standalone Script
 
 ```powershell
 # First run: Configure the groups you want to manage
@@ -28,40 +44,92 @@ A PowerShell terminal UI for managing Entra ID security group membership.
 
 ## Installation
 
-### Option 1: Run directly
+### Option 1: PowerShell Gallery
+
 ```powershell
-.\GroupManager.ps1
+# Current user
+Install-Module GroupManager -Scope CurrentUser
+
+# All users (requires admin)
+Install-Module GroupManager -Scope AllUsers
 ```
 
-### Option 2: Install to PowerShell profile
+### Option 2: Standalone script
+
+Run `GroupManager.ps1` directly, or install it to your PowerShell profile:
+
 ```powershell
 .\GroupManager.ps1 -Install
 ```
+
 Then run `GroupManager` from any PowerShell window.
+
+## Module Cmdlets
+
+| Cmdlet | Description |
+|--------|-------------|
+| `Start-GroupManager` | Launch the interactive TUI |
+| `Connect-GroupManager` | Connect to Microsoft Graph |
+| `Set-GroupManagerGroup` | Configure groups (interactive or with -ObjectId) |
+| `Set-GroupManagerAuth` | Configure custom app registration |
+| `Get-GroupManagerConfig` | View current group configuration |
+| `Get-GroupManagerMember` | List members of a group |
+| `Add-GroupManagerMember` | Add a user to a group by UPN |
+| `Remove-GroupManagerMember` | Remove a user from a group by UPN |
+| `Clear-GroupManagerConfig` | Remove saved group configuration |
+| `Clear-GroupManagerAuth` | Remove saved app registration configuration |
+
+### Scripting Examples
+
+```powershell
+# Connect to Graph
+Connect-GroupManager
+
+# List members of a group
+Get-GroupManagerMember -GroupId "88626840-b24d-417e-aca5-18f224b081d7"
+
+# Add a user
+Add-GroupManagerMember -GroupId "88626840-..." -UserPrincipalName "user@contoso.com"
+
+# Remove a user
+Remove-GroupManagerMember -GroupId "88626840-..." -UserPrincipalName "user@contoso.com"
+
+# Pipe member list to a table
+Get-GroupManagerMember -GroupId "88626840-..." | Format-Table
+```
 
 ## Configuration
 
-### Configure Groups (-Setup)
+### Configure Groups
 
-Before first use, configure the groups you want to manage:
-
+**Module:**
 ```powershell
 # Interactive menu
-.\GroupManager.ps1 -Setup
+Set-GroupManagerGroup
 
-# Add single group by Object ID
-.\GroupManager.ps1 -Setup -ObjectId "07a94b39-cfee-41bd-a76f-187b3161696a"
+# Add by Object ID
+Set-GroupManagerGroup -ObjectId "07a94b39-cfee-41bd-a76f-187b3161696a"
 
 # Add multiple groups
-.\GroupManager.ps1 -Setup -ObjectId "guid1", "guid2", "guid3"
+Set-GroupManagerGroup -ObjectId "guid1", "guid2", "guid3"
+```
+
+**Standalone script:**
+```powershell
+.\GroupManager.ps1 -Setup
+.\GroupManager.ps1 -Setup -ObjectId "07a94b39-cfee-41bd-a76f-187b3161696a"
 ```
 
 Groups are saved to `%LOCALAPPDATA%\GroupManager\config.json`.
 
-### Configure Custom App Registration (-Configure)
+### Configure Custom App Registration
 
-Use your own app registration instead of the default Microsoft Graph auth:
+**Module:**
+```powershell
+Set-GroupManagerAuth
+```
 
+**Standalone script:**
 ```powershell
 .\GroupManager.ps1 -Configure
 ```
@@ -87,17 +155,11 @@ Configuration is saved as user-level environment variables.
    ```
 9. Under **Advanced settings** on the Authentication page, set **Allow public client flows** to **Yes** and click **Save**
 10. Go to **API permissions** > **Add a permission** > **Microsoft Graph** > **Delegated permissions**
-9. Add the following permissions:
-   - `User.Read`
-   - `User.Read.All`
-   - `GroupMember.ReadWrite.All`
-10. Click **Grant admin consent** (requires admin privileges)
-
-Then run the configure command and enter the Client ID and Tenant ID when prompted:
-
-```powershell
-.\GroupManager.ps1 -Configure
-```
+11. Add the following permissions:
+    - `User.Read`
+    - `User.Read.All`
+    - `GroupMember.ReadWrite.All`
+12. Click **Grant admin consent** (requires admin privileges)
 
 #### Required API Permissions (Delegated)
 
@@ -109,15 +171,19 @@ Then run the configure command and enter the Client ID and Tenant ID when prompt
 
 ### Clear Configurations
 
+**Module:**
 ```powershell
-# Clear group configuration
-.\GroupManager.ps1 -ClearConfig
+Clear-GroupManagerConfig   # Clear group configuration
+Clear-GroupManagerAuth     # Clear app registration configuration
+```
 
-# Clear app registration configuration
+**Standalone script:**
+```powershell
+.\GroupManager.ps1 -ClearConfig
 .\GroupManager.ps1 -ClearAuth
 ```
 
-## Parameters
+## Standalone Script Parameters
 
 | Parameter | Description |
 |-----------|-------------|
@@ -131,7 +197,7 @@ Then run the configure command and enter the Client ID and Tenant ID when prompt
 ## Requirements
 
 - PowerShell 5.1+ (PowerShell 7+ recommended)
-- Microsoft Graph PowerShell modules (auto-installed):
+- Microsoft Graph PowerShell modules (auto-installed if using the standalone script, auto-required if using the module):
   - Microsoft.Graph.Authentication
   - Microsoft.Graph.Groups
   - Microsoft.Graph.Users
