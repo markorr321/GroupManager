@@ -161,7 +161,7 @@ Configuration is saved as user-level environment variables.
 7. Go to **Authentication** > **Add a platform** > **Mobile and desktop applications**
 8. Add the following Redirect URI:
    ```
-   ms-appx-web://Microsoft.AAD.BrokerPlugin/afc072ee-5353-4b0c-a487-de0ae2c0b500
+   http://localhost
    ```
 9. Under **Advanced settings** on the Authentication page, set **Allow public client flows** to **Yes** and click **Save**
 10. Go to **API permissions** > **Add a permission** > **Microsoft Graph** > **Delegated permissions**
