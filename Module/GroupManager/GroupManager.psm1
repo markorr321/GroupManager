@@ -1,5 +1,9 @@
 $script:ModuleRoot = $PSScriptRoot
-$script:ConfigPath = Join-Path $env:LOCALAPPDATA "GroupManager\config.json"
+$script:ConfigPath = if ($env:LOCALAPPDATA) {
+    Join-Path $env:LOCALAPPDATA "GroupManager/config.json"
+} else {
+    Join-Path "$HOME/.local/share" "GroupManager/config.json"
+}
 $script:GroupId = $null
 $script:GroupName = $null
 $script:ModuleVersion = (Import-PowerShellDataFile "$script:ModuleRoot\GroupManager.psd1").ModuleVersion

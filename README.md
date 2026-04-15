@@ -1,9 +1,9 @@
 # GroupManager
 
-A PowerShell tool for managing Entra ID security group membership. Available as a standalone script or a PowerShell Gallery module.
+A PowerShell module for managing Entra ID security group membership.
 
 ![PowerShell](https://img.shields.io/badge/PowerShell-5.1+-blue.svg)
-![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey.svg)
+![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)
 ![Gallery](https://img.shields.io/powershellgallery/v/GroupManager.svg)
 
 ## Features
@@ -15,11 +15,9 @@ A PowerShell tool for managing Entra ID security group membership. Available as 
 - Configure multiple groups by Object ID
 - Support for custom app registration authentication
 - Non-interactive cmdlets for scripting and automation
-- Auto-install Microsoft Graph modules if missing
+- Cross-platform support (Windows, macOS, Linux)
 
 ## Quick Start
-
-### PowerShell Gallery (Recommended)
 
 ```powershell
 Install-Module GroupManager -Scope CurrentUser
@@ -33,19 +31,7 @@ Set-GroupManagerGroup
 Start-GroupManager
 ```
 
-### Standalone Script
-
-```powershell
-.\GroupManager.ps1 -Setup
-```
-
-```powershell
-.\GroupManager.ps1
-```
-
 ## Installation
-
-### Option 1: PowerShell Gallery
 
 Current user:
 ```powershell
@@ -57,17 +43,7 @@ All users (requires admin):
 Install-Module GroupManager -Scope AllUsers
 ```
 
-### Option 2: Standalone script
-
-Run `GroupManager.ps1` directly, or install it to your PowerShell profile:
-
-```powershell
-.\GroupManager.ps1 -Install
-```
-
-Then run `GroupManager` from any PowerShell window.
-
-## Module Cmdlets
+## Cmdlets
 
 | Cmdlet | Description |
 |--------|-------------|
@@ -108,7 +84,6 @@ Get-GroupManagerMember -GroupId "88626840-..." | Format-Table
 
 ### Configure Groups
 
-**Module:**
 ```powershell
 Set-GroupManagerGroup
 ```
@@ -121,34 +96,23 @@ Set-GroupManagerGroup -ObjectId "07a94b39-cfee-41bd-a76f-187b3161696a"
 Set-GroupManagerGroup -ObjectId "guid1", "guid2", "guid3"
 ```
 
-**Standalone script:**
-```powershell
-.\GroupManager.ps1 -Setup
-```
-
-```powershell
-.\GroupManager.ps1 -Setup -ObjectId "07a94b39-cfee-41bd-a76f-187b3161696a"
-```
-
-Groups are saved to `%LOCALAPPDATA%\GroupManager\config.json`.
+Groups are saved to a local config file (`%LOCALAPPDATA%\GroupManager\config.json` on Windows, `~/.local/share/GroupManager/config.json` on macOS/Linux).
 
 ### Configure Custom App Registration
 
-**Module:**
 ```powershell
 Set-GroupManagerAuth
 ```
 
-**Standalone script:**
 ```powershell
-.\GroupManager.ps1 -Configure
+Set-GroupManagerAuth -ClientId "00000000-0000-0000-0000-000000000000" -TenantId "00000000-0000-0000-0000-000000000000"
 ```
 
 This prompts for:
 - **Client ID** - Your app registration's Application (client) ID
 - **Tenant ID** - Your Azure AD tenant ID
 
-Configuration is saved as user-level environment variables.
+Configuration is saved as user-level environment variables. On macOS, you'll be offered to add them to your PowerShell profile for persistence across sessions.
 
 #### Creating the App Registration
 
@@ -181,7 +145,6 @@ Configuration is saved as user-level environment variables.
 
 ### Clear Configurations
 
-**Module:**
 ```powershell
 Clear-GroupManagerConfig
 ```
@@ -190,30 +153,10 @@ Clear-GroupManagerConfig
 Clear-GroupManagerAuth
 ```
 
-**Standalone script:**
-```powershell
-.\GroupManager.ps1 -ClearConfig
-```
-
-```powershell
-.\GroupManager.ps1 -ClearAuth
-```
-
-## Standalone Script Parameters
-
-| Parameter | Description |
-|-----------|-------------|
-| `-Install` | Add GroupManager function to your PowerShell profile |
-| `-Setup` | Configure groups to manage (interactive or with -ObjectId) |
-| `-ObjectId` | Group Object ID(s) to add (use with -Setup) |
-| `-Configure` | Configure custom app registration for authentication |
-| `-ClearAuth` | Remove saved app registration configuration |
-| `-ClearConfig` | Remove saved group configuration |
-
 ## Requirements
 
 - PowerShell 5.1+ (PowerShell 7+ recommended)
-- Microsoft Graph PowerShell modules (auto-installed if using the standalone script, auto-required if using the module):
+- Microsoft Graph PowerShell modules (auto-required):
   - Microsoft.Graph.Authentication
   - Microsoft.Graph.Groups
   - Microsoft.Graph.Users
