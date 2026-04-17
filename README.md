@@ -1,6 +1,6 @@
 # GroupManager
 
-A PowerShell tool for managing Entra ID security group membership. Available as a standalone script or a PowerShell Gallery module.
+A PowerShell module for managing Entra ID security group membership.
 
 ![PowerShell](https://img.shields.io/badge/PowerShell-5.1+-blue.svg)
 ![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey.svg)
@@ -33,19 +33,7 @@ Set-GroupManagerGroup
 Start-GroupManager
 ```
 
-### Standalone Script
-
-```powershell
-.\GroupManager.ps1 -Setup
-```
-
-```powershell
-.\GroupManager.ps1
-```
-
 ## Installation
-
-### Option 1: PowerShell Gallery
 
 Current user:
 ```powershell
@@ -57,17 +45,7 @@ All users (requires admin):
 Install-Module GroupManager -Scope AllUsers
 ```
 
-### Option 2: Standalone script
-
-Run `GroupManager.ps1` directly, or install it to your PowerShell profile:
-
-```powershell
-.\GroupManager.ps1 -Install
-```
-
-Then run `GroupManager` from any PowerShell window.
-
-## Module Cmdlets
+## Cmdlets
 
 | Cmdlet | Description |
 |--------|-------------|
@@ -82,33 +60,26 @@ Then run `GroupManager` from any PowerShell window.
 | `Clear-GroupManagerConfig` | Remove saved group configuration |
 | `Clear-GroupManagerAuth` | Remove saved app registration configuration |
 
-### Scripting Examples
 
-```powershell
-Connect-GroupManager
-```
-
-```powershell
-Get-GroupManagerMember -GroupId "88626840-b24d-417e-aca5-18f224b081d7"
-```
-
-```powershell
-Add-GroupManagerMember -GroupId "88626840-..." -UserPrincipalName "user@contoso.com"
-```
-
-```powershell
-Remove-GroupManagerMember -GroupId "88626840-..." -UserPrincipalName "user@contoso.com"
-```
-
-```powershell
-Get-GroupManagerMember -GroupId "88626840-..." | Format-Table
-```
 
 ## Configuration
 
+### Configure Custom App Registration
+
+```powershell
+Set-GroupManagerAuth
+```
+
+This prompts for:
+- **Client ID** - Your app registration's Application (client) ID
+- **Tenant ID** - Your Azure AD tenant ID
+
+Configuration is saved as user-level environment variables.
+
+See [Custom App Registration](Custom%20App%20Registration/README.md) for setup instructions.
+
 ### Configure Groups
 
-**Module:**
 ```powershell
 Set-GroupManagerGroup
 ```
@@ -121,67 +92,10 @@ Set-GroupManagerGroup -ObjectId "07a94b39-cfee-41bd-a76f-187b3161696a"
 Set-GroupManagerGroup -ObjectId "guid1", "guid2", "guid3"
 ```
 
-**Standalone script:**
-```powershell
-.\GroupManager.ps1 -Setup
-```
-
-```powershell
-.\GroupManager.ps1 -Setup -ObjectId "07a94b39-cfee-41bd-a76f-187b3161696a"
-```
-
 Groups are saved to `%LOCALAPPDATA%\GroupManager\config.json`.
-
-### Configure Custom App Registration
-
-**Module:**
-```powershell
-Set-GroupManagerAuth
-```
-
-**Standalone script:**
-```powershell
-.\GroupManager.ps1 -Configure
-```
-
-This prompts for:
-- **Client ID** - Your app registration's Application (client) ID
-- **Tenant ID** - Your Azure AD tenant ID
-
-Configuration is saved as user-level environment variables.
-
-#### Creating the App Registration
-
-1. Go to the [Azure Portal](https://portal.azure.com) > **Microsoft Entra ID** > **App registrations**
-2. Click **New registration**
-3. Enter a name (e.g. `GroupManager`)
-4. Set **Supported account types** to *Accounts in this organizational directory only (Single tenant)*
-5. Leave **Redirect URI** blank for now and click **Register**
-6. Copy the **Application (client) ID** and **Directory (tenant) ID** from the Overview page
-7. Go to **Authentication** > **Add a platform** > **Mobile and desktop applications**
-8. Add the following Redirect URI:
-   ```
-   http://localhost
-   ```
-9. Under **Advanced settings** on the Authentication page, set **Allow public client flows** to **Yes** and click **Save**
-10. Go to **API permissions** > **Add a permission** > **Microsoft Graph** > **Delegated permissions**
-11. Add the following permissions:
-    - `User.Read`
-    - `User.Read.All`
-    - `GroupMember.ReadWrite.All`
-12. Click **Grant admin consent** (requires admin privileges)
-
-#### Required API Permissions (Delegated)
-
-| Permission | Description |
-|------------|-------------|
-| User.Read | Sign in and read user profile |
-| User.Read.All | Read all users' full profiles |
-| GroupMember.ReadWrite.All | Read and write group memberships |
 
 ### Clear Configurations
 
-**Module:**
 ```powershell
 Clear-GroupManagerConfig
 ```
@@ -190,30 +104,10 @@ Clear-GroupManagerConfig
 Clear-GroupManagerAuth
 ```
 
-**Standalone script:**
-```powershell
-.\GroupManager.ps1 -ClearConfig
-```
-
-```powershell
-.\GroupManager.ps1 -ClearAuth
-```
-
-## Standalone Script Parameters
-
-| Parameter | Description |
-|-----------|-------------|
-| `-Install` | Add GroupManager function to your PowerShell profile |
-| `-Setup` | Configure groups to manage (interactive or with -ObjectId) |
-| `-ObjectId` | Group Object ID(s) to add (use with -Setup) |
-| `-Configure` | Configure custom app registration for authentication |
-| `-ClearAuth` | Remove saved app registration configuration |
-| `-ClearConfig` | Remove saved group configuration |
-
 ## Requirements
 
 - PowerShell 5.1+ (PowerShell 7+ recommended)
-- Microsoft Graph PowerShell modules (auto-installed if using the standalone script, auto-required if using the module):
+- Microsoft Graph PowerShell modules:
   - Microsoft.Graph.Authentication
   - Microsoft.Graph.Groups
   - Microsoft.Graph.Users
