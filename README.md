@@ -3,7 +3,7 @@
 A PowerShell module for managing Entra ID security group membership.
 
 ![PowerShell](https://img.shields.io/badge/PowerShell-5.1+-blue.svg)
-![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey.svg)
+![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)
 ![Gallery](https://img.shields.io/powershellgallery/v/GroupManager.svg)
 
 ## Features
@@ -15,7 +15,7 @@ A PowerShell module for managing Entra ID security group membership.
 - Configure multiple groups by Object ID
 - Support for custom app registration authentication
 - Non-interactive cmdlets for scripting and automation
-- Auto-install Microsoft Graph modules if missing
+- Cross-platform support (Windows, macOS, Linux)
 
 ## Quick Start
 
@@ -31,18 +31,6 @@ Set-GroupManagerGroup
 
 ```powershell
 Start-GroupManager
-```
-
-## Installation
-
-Current user:
-```powershell
-Install-Module GroupManager -Scope CurrentUser
-```
-
-All users (requires admin):
-```powershell
-Install-Module GroupManager -Scope AllUsers
 ```
 
 ## Cmdlets
@@ -92,7 +80,7 @@ Set-GroupManagerGroup -ObjectId "07a94b39-cfee-41bd-a76f-187b3161696a"
 Set-GroupManagerGroup -ObjectId "guid1", "guid2", "guid3"
 ```
 
-Groups are saved to `%LOCALAPPDATA%\GroupManager\config.json`.
+Groups are saved to a local config file (`%LOCALAPPDATA%\GroupManager\config.json` on Windows, `~/.local/share/GroupManager/config.json` on macOS/Linux).
 
 ### Clear Configurations
 
@@ -107,7 +95,7 @@ Clear-GroupManagerAuth
 ## Requirements
 
 - PowerShell 5.1+ (PowerShell 7+ recommended)
-- Microsoft Graph PowerShell modules:
+- Microsoft Graph PowerShell modules (auto-required):
   - Microsoft.Graph.Authentication
   - Microsoft.Graph.Groups
   - Microsoft.Graph.Users
