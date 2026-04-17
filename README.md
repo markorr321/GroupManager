@@ -2,7 +2,7 @@
 
 A PowerShell module for managing Entra ID security group membership.
 
-![PowerShell](https://img.shields.io/badge/PowerShell-5.1+-blue.svg)
+![PowerShell](https://img.shields.io/badge/PowerShell-7+-blue.svg)
 ![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)
 ![Gallery](https://img.shields.io/powershellgallery/v/GroupManager.svg)
 
